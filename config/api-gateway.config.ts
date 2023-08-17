@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 
-export default async () => {
+export default () => {
   const envVarsSchema = Yup.object()
     .shape({
       PORT: Yup.string().default('3000'),
@@ -23,33 +23,34 @@ export default async () => {
       JWT_REFRESH_TOKEN_EXPIRES: Yup.string().default('30d'),
     })
     .unknown();
-
-  return envVarsSchema
-    .validate(process.env, {
+  let envVars: Yup.InferType<typeof envVarsSchema>;
+  try {
+    envVars = envVarsSchema.validateSync(process.env, {
       strict: true,
       abortEarly: true,
       stripUnknown: true,
-    })
-    .then((envVars) => {
-      return {
-        port: envVars.PORT,
-        env: envVars.NODE_ENV,
-        app_name: envVars.APP_NAME,
-        api_gateway_host: envVars.API_GATEWAY_HOST,
-        api_gateway_base_path: envVars.API_GATEWAY_BASE_PATH,
-        api_gateway_timeout: envVars.API_GATEWAY_TIMEOUT,
-        database_url: envVars.DATABASE_URL,
-        mail_from: envVars.MAIL_FROM,
-        mail_host: envVars.MAIL_HOST,
-        mail_port: envVars.MAIL_PORT,
-        mail_user: envVars.MAIL_USER,
-        mail_password: envVars.MAIL_PASSWORD,
-        redis_url: envVars.REDIS_URL,
-        jwt_access_token_expires: envVars.JWT_ACCESS_TOKEN_EXPIRES,
-        jwt_refresh_token_expires: envVars.JWT_REFRESH_TOKEN_EXPIRES,
-      };
-    })
-    .catch((error) => {
-      throw new Error(`Config validation error: ${error.message}`);
     });
+  } catch (error) {
+    throw new Error(`Config validation error: ${error.message}`);
+  }
+
+  return {
+    port: envVars.PORT,
+    env: envVars.NODE_ENV,
+    app_name: envVars.APP_NAME,
+    api_gateway_host: envVars.API_GATEWAY_HOST,
+    api_gateway_base_path: envVars.API_GATEWAY_BASE_PATH,
+    api_gateway_timeout: envVars.API_GATEWAY_TIMEOUT,
+    database_url: envVars.DATABASE_URL,
+    mail: {
+      from: envVars.MAIL_FROM,
+      host: envVars.MAIL_HOST,
+      port: envVars.MAIL_PORT,
+      user: envVars.MAIL_USER,
+      password: envVars.MAIL_PASSWORD,
+    },
+    redis_url: envVars.REDIS_URL,
+    jwt_access_token_expires: envVars.JWT_ACCESS_TOKEN_EXPIRES,
+    jwt_refresh_token_expires: envVars.JWT_REFRESH_TOKEN_EXPIRES,
+  };
 };
