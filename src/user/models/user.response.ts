@@ -1,4 +1,4 @@
-import type { User } from '@prisma/client';
+import type { AccountStatus, User } from '@prisma/client';
 
 export class UserResponse {
   id: string;
@@ -19,6 +19,8 @@ export class UserResponse {
 
   updatedAt: Date; // ISO Date
 
+  status: AccountStatus;
+
   static fromUserEntity(entity: User): UserResponse {
     const response = new UserResponse();
     response.id = entity.id;
@@ -32,6 +34,7 @@ export class UserResponse {
     response.birthDate = entity.birthDate;
     response.createdAt = entity.createdAt;
     response.updatedAt = entity.updatedAt;
+    response.status = entity.status;
     return response;
   }
 }

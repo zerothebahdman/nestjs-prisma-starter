@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { mockDeep, MockProxy } from 'jest-mock-extended';
 import { AuthService } from './auth.service';
-import { MailSenderService } from '../mail-sender/mail-sender.service';
+import { EmailService } from '../mail-sender/mail-sender.service';
 import { UserService } from '../user/user.service';
 import config from '../config';
 import { PrismaService } from '../common/services/prisma.service';
@@ -10,7 +10,7 @@ import { PrismaService } from '../common/services/prisma.service';
 describe('AuthService', () => {
   let service: AuthService;
   // mock services
-  let spyMailSenderService: MailSenderService;
+  let spyEmailService: EmailService;
   let spyUserService: UserService;
   let spyJwtService: JwtService;
   let spyPrismaService: MockProxy<PrismaService>;
@@ -27,7 +27,7 @@ describe('AuthService', () => {
       ],
       providers: [
         AuthService,
-        MailSenderService,
+        EmailService,
         UserService,
         {
           provide: PrismaService,
@@ -37,7 +37,7 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    spyMailSenderService = module.get<MailSenderService>(MailSenderService);
+    spyEmailService = module.get<EmailService>(EmailService);
     spyUserService = module.get<UserService>(UserService);
     spyJwtService = module.get<JwtService>(JwtService);
     spyPrismaService = module.get(PrismaService) as MockProxy<PrismaService>;
@@ -45,7 +45,7 @@ describe('AuthService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
-    expect(spyMailSenderService).toBeDefined();
+    expect(spyEmailService).toBeDefined();
     expect(spyUserService).toBeDefined();
     expect(spyJwtService).toBeDefined();
     expect(spyPrismaService).toBeDefined();

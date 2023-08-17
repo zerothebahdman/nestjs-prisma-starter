@@ -4,15 +4,12 @@ import * as Mail from 'nodemailer/lib/mailer';
 
 // import config from '../config';
 import config from 'config/api-gateway.config';
-import { EMAIL_VERIFICATION } from './templates';
+import { EMAIL_VERIFICATION, PASSWORD_RESET } from './templates';
 
 @Injectable()
-export class MailSenderService {
+export class EmailService {
   private transporter: Mail;
-
-  private socials: string;
-
-  private logger = new Logger('MailSenderService');
+  private logger = new Logger('EmailService');
 
   constructor() {
     this.transporter = createTransport({
@@ -32,17 +29,17 @@ export class MailSenderService {
 
   private async sendMail(mailOptions: Mail.Options) {
     this.transporter.verify((error) => {
-      if (error) Logger.error(`Error sending email :::::: ${error}`);
-      else Logger.log('Server 🚀 is ready to send out mails');
+      if (error) this.logger.error(`Error sending email :::::: ${error}`);
+      else this.logger.log('Server 🚀 is ready to send out mails');
     });
 
     return this.transporter.sendMail(mailOptions, (error, info) => {
       if (error) Logger.error(`Error sending email :::::: ${error}`);
       else {
-        console.log(`Email sent: ${info.response}`);
-        console.log(`Email sent to: ${info.accepted}`);
-        console.log(`Email sent count: ${info.accepted?.length}`);
-        console.log(`Email failed Count: ${info.rejected?.length}`);
+        this.logger.log(`Email sent: ${info.response}`);
+        this.logger.log(`Email sent to: ${info.accepted}`);
+        this.logger.log(`Email sent count: ${info.accepted?.length}`);
+        this.logger.log(`Email failed Count: ${info.rejected?.length}`);
       }
     });
   }
@@ -54,70 +51,31 @@ export class MailSenderService {
       subject: 'Email Verification Requested',
       html: EMAIL_VERIFICATION(name, token),
     };
-    Logger.log(`Sending email to ${email}`);
+    this.logger.log(`Sending email to ${email}`);
     return this.sendMail(mailOptions);
   }
 
   async sendChangeEmailMail(name: string, email: string, token: string) {
-    // const buttonLink = `${config.project.mailChangeUrl}?token=${token}`;
-    // const mail = changeMail
-    //   .replace(new RegExp('--PersonName--', 'g'), name)
-    //   .replace(new RegExp('--ProjectName--', 'g'), config.project.name)
-    //   .replace(new RegExp('--ProjectAddress--', 'g'), config.project.address)
-    //   .replace(new RegExp('--ProjectLogo--', 'g'), config.project.logoUrl)
-    //   .replace(new RegExp('--ProjectSlogan--', 'g'), config.project.slogan)
-    //   .replace(new RegExp('--ProjectColor--', 'g'), config.project.color)
-    //   .replace(new RegExp('--ProjectLink--', 'g'), config.project.url)
-    //   .replace(new RegExp('--Socials--', 'g'), this.socials)
-    //   .replace(new RegExp('--ButtonLink--', 'g'), buttonLink);
-    // const mailOptions = {
-    //   from: `"${config.mail.senderCredentials.name}" <${config.mail.senderCredentials.email}>`,
-    //   to: email, // list of receivers (separated by ,)
-    //   subject: `Change Your ${config.project.name} Account's Email`,
-    //   html: mail,
-    // };
-    // return new Promise<boolean>((resolve) =>
-    //   this.transporter.sendMail(mailOptions, async (error) => {
-    //     if (error) {
-    //       this.logger.warn(
-    //         'Mail sending failed, check your service credentials.',
-    //       );
-    //       resolve(false);
-    //     }
-    //     resolve(true);
-    //   }),
-    // );
+    const mailOptions = {
+      from: config().mail.from,
+      to: email, // list of receivers (separated by ,)
+      subject: 'Email Change Requested',
+      html: PASSWORD_RESET(name, token),
+    };
+    this.logger.log(`Sending email to ${email}`);
+    return this.sendMail(mailOptions);
   }
 
   async sendResetPasswordMail(name: string, email: string, token: string) {
-    // const buttonLink = `${config.project.resetPasswordUrl}?token=${token}`;
-    // const mail = resetPassword
-    //   .replace(new RegExp('--PersonName--', 'g'), name)
-    //   .replace(new RegExp('--ProjectName--', 'g'), config.project.name)
-    //   .replace(new RegExp('--ProjectAddress--', 'g'), config.project.address)
-    //   .replace(new RegExp('--ProjectLogo--', 'g'), config.project.logoUrl)
-    //   .replace(new RegExp('--ProjectSlogan--', 'g'), config.project.slogan)
-    //   .replace(new RegExp('--ProjectColor--', 'g'), config.project.color)
-    //   .replace(new RegExp('--ProjectLink--', 'g'), config.project.url)
-    //   .replace(new RegExp('--Socials--', 'g'), this.socials)
-    //   .replace(new RegExp('--ButtonLink--', 'g'), buttonLink);
-    // const mailOptions = {
-    //   from: `"${config.mail.senderCredentials.name}" <${config.mail.senderCredentials.email}>`,
-    //   to: email, // list of receivers (separated by ,)
-    //   subject: `Reset Your ${config.project.name} Account's Password`,
-    //   html: mail,
-    // };
-    // return new Promise<boolean>((resolve) =>
-    //   this.transporter.sendMail(mailOptions, async (error) => {
-    //     if (error) {
-    //       this.logger.warn(
-    //         'Mail sending failed, check your service credentials.',
-    //       );
-    //       resolve(false);
-    //     }
-    //     resolve(true);
-    //   }),
-    // );
+    this.logger.log({ from: config().mail.from });
+    const mailOptions = {
+      from: config().mail.from,
+      to: email, // list of receivers (separated by ,)
+      subject: 'Password Reset Requested',
+      html: PASSWORD_RESET(name, token),
+    };
+    this.logger.log(`Sending email to ${email}`);
+    return this.sendMail(mailOptions);
   }
 
   async sendPasswordChangeInfoMail(name: string, email: string) {

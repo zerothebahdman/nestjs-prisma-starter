@@ -4,7 +4,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Post,
   Query,
   UseGuards,
@@ -19,7 +18,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { Usr } from '../user/user.decorator';
 import {
-  ChangeEmailRequest,
   ChangePasswordRequest,
   CheckEmailRequest,
   CheckEmailResponse,
@@ -34,7 +32,8 @@ import { UserResponse } from '../user/models';
 import { AuthUser } from './auth-user';
 import { UserService } from '../user/user.service';
 import { HelperClass } from 'src/utils/helpers';
-import { MailSenderService } from 'src/mail-sender/mail-sender.service';
+import { EmailService } from 'src/mail-sender/mail-sender.service';
+import { AccountStatus } from '@prisma/client';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -43,7 +42,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly userService: UserService,
     private readonly helperClass: HelperClass,
-    private readonly emailService: MailSenderService,
+    private readonly emailService: EmailService,
   ) {}
 
   @ApiOperation({ summary: 'Check username validity' })
@@ -106,38 +105,10 @@ export class AuthController {
     await this.authService.verifyEmail(token);
   }
 
-  @ApiBearerAuth()
-  @Post('change-email')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard())
-  async sendChangeEmailMail(
-    @Usr() user: AuthUser,
-    @Body() changeEmailRequest: ChangeEmailRequest,
-  ): Promise<void> {
-    await this.authService.sendChangeEmailMail(
-      changeEmailRequest,
-      user.id,
-      user.firstName,
-      user.email,
-    );
-  }
-
   @Get('change-email')
   @HttpCode(HttpStatus.OK)
   async changeEmail(@Query('token') token: string): Promise<void> {
     await this.authService.changeEmail(token);
-  }
-
-  @Post('forgot-password/:email')
-  @HttpCode(HttpStatus.OK)
-  async sendResetPassword(@Param('email') email: string): Promise<void> {
-    const user = await this.userService.queryUserDetails({
-      email: email.toLocaleLowerCase(),
-    });
-    const token = this.helperClass.generateRandomString(6, 'num');
-    const hashToken = await this.helperClass.hashString(token);
-    await this.authService.initiateResetPassword(user, hashToken);
-    await this.emailService.sendResetPasswordMail(user.name, user.email, token);
   }
 
   @Post('change-password')
@@ -147,12 +118,24 @@ export class AuthController {
     @Body() changePasswordRequest: ChangePasswordRequest,
     @Usr() user: AuthUser,
   ): Promise<void> {
-    await this.authService.changePassword(
-      changePasswordRequest,
-      user.id,
-      user.firstName,
-      user.email,
-    );
+    await this.authService.changePassword(changePasswordRequest, user.id);
+    this.emailService.sendPasswordChangeInfoMail(user.firstName, user.email);
+  }
+
+  @Post('forgot-password')
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Password reset token sent successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: CheckEmailRequest) {
+    const user = await this.userService.queryUserDetails({
+      email: body.email.toLocaleLowerCase(),
+    });
+    const token = this.helperClass.generateRandomString(6, 'num');
+    const hashToken = await this.helperClass.hashString(token);
+    await this.authService.initiateResetPassword(user, hashToken);
+    await this.emailService.sendResetPasswordMail(user.name, user.email, token);
   }
 
   @Post('reset-password')
@@ -165,13 +148,12 @@ export class AuthController {
 
   @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
-  // @UseGuards(AuthGuard())
   async resendVerificationMail(@Body() body: CheckEmailRequest): Promise<void> {
     const user = await this.userService.queryUserDetails({
       email: body.email.toLocaleLowerCase(),
     });
-    // if (user.accountStatus.status === ACCOUNT_STATUS.CONFIRMED)
-    //   throw new Error(`Oops!, account has already been verified`);
+    if (user.status === AccountStatus.confirmed)
+      throw new Error(`Oops!, account has already been verified`);
     const token = this.helperClass.generateRandomString(6, 'num');
     const hashToken = await this.helperClass.hashString(token);
     await this.authService.resendVerificationMail(user.id, hashToken);

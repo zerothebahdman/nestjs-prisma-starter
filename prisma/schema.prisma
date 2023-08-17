@@ -8,7 +8,7 @@ datasource db {
 }
 
 model EmailChange {
-  token      String   @id @db.Char(21)
+  token      String   @id @db.Char(250)
   newEmail   String
   userId     String   @unique @db.Uuid
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -27,7 +27,7 @@ model EmailVerification {
 }
 
 model PasswordReset {
-  token      String   @id @db.Char(21)
+  token      String   @id @db.Char(250)
   userId     String   @unique @db.Uuid
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   validUntil DateTime @default(dbgenerated("(timezone('utc'::text, now()) + '1 day'::interval)")) @db.Timestamp(6)
@@ -44,7 +44,7 @@ model User {
   lastName          String
   middleName        String?
   avatar            String?
-  status            AccountStatus?     @default(pending)
+  status            AccountStatus      @default(pending)
   emailVerified     Boolean            @default(false)
   birthDate         DateTime?          @db.Date
   createdAt         DateTime           @default(dbgenerated("timezone('UTC'::text, now())")) @db.Timestamp(6)

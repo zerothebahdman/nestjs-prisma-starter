@@ -3,7 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { MailSenderService } from '../mail-sender/mail-sender.service';
+import { EmailService } from '../mail-sender/mail-sender.service';
 import { UserService } from '../user/user.service';
 import config from '../config';
 import { PrismaService } from '../common/services/prisma.service';
@@ -24,7 +24,7 @@ describe('Auth Controller', () => {
         }),
         PassportModule.register({ defaultStrategy: 'jwt' }),
       ],
-      providers: [AuthService, MailSenderService, UserService, PrismaService],
+      providers: [AuthService, EmailService, UserService, PrismaService],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);

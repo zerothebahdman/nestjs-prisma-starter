@@ -9,10 +9,9 @@ import {
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { nanoid } from 'nanoid';
-import { Prisma } from '@prisma/client';
+import { AccountStatus, Prisma } from '@prisma/client';
 import { UserService } from '../user/user.service';
 import { JwtPayload } from './jwt-payload';
-import { MailSenderService } from '../mail-sender/mail-sender.service';
 import {
   ChangeEmailRequest,
   ChangePasswordRequest,
@@ -30,7 +29,6 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-    private readonly mailSenderService: MailSenderService,
   ) {}
 
   async signup(signupRequest: SignupRequest, token: string) {
@@ -96,6 +94,7 @@ export class AuthService {
         where: { id: emailVerification.userId },
         data: {
           emailVerified: true,
+          status: AccountStatus.confirmed,
         },
         select: null,
       });
@@ -108,8 +107,8 @@ export class AuthService {
   async sendChangeEmailMail(
     changeEmailRequest: ChangeEmailRequest,
     userId: string,
-    name: string,
-    oldEmail: string,
+    // name: string,
+    // oldEmail: string,
   ): Promise<void> {
     const emailAvailable = await this.isEmailAvailable(
       changeEmailRequest.newEmail,
@@ -141,7 +140,7 @@ export class AuthService {
       createEmailChange,
     ]);
 
-    await this.mailSenderService.sendChangeEmailMail(name, oldEmail, token);
+    // await this.emailService.sendChangeEmailMail(name, oldEmail, token);
   }
 
   async changeEmail(token: string): Promise<void> {
@@ -213,8 +212,6 @@ export class AuthService {
   async changePassword(
     changePasswordRequest: ChangePasswordRequest,
     userId: string,
-    name: string,
-    email: string,
   ): Promise<void> {
     await this.prisma.user.update({
       where: {
@@ -225,9 +222,6 @@ export class AuthService {
       },
       select: null,
     });
-
-    // no need to wait for information email
-    this.mailSenderService.sendPasswordChangeInfoMail(name, email);
   }
 
   async validateUser(payload: JwtPayload): Promise<AuthUser> {
