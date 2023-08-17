@@ -7,7 +7,7 @@ import { UpdateUserRequest, UserResponse } from './models';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  public async getUserEntityById(id: number): Promise<AuthUser | null> {
+  public async getUserEntityById(id: string): Promise<AuthUser | null> {
     return this.prisma.user.findUnique({
       where: { id },
     });
@@ -23,7 +23,7 @@ export class UserService {
   }
 
   async updateUser(
-    userId: number,
+    userId: string,
     updateRequest: UpdateUserRequest,
   ): Promise<UserResponse> {
     try {
@@ -40,6 +40,19 @@ export class UserService {
       });
 
       return UserResponse.fromUserEntity(updatedUser);
+    } catch (err) {
+      Logger.error(JSON.stringify(err));
+      throw new ConflictException();
+    }
+  }
+
+  async queryUserDetails(filter: { [key: string]: string }) {
+    try {
+      const user = await this.prisma.user.findFirst({
+        where: filter,
+      });
+      if (!user) throw new ConflictException('User not found');
+      return UserResponse.fromUserEntity(user);
     } catch (err) {
       Logger.error(JSON.stringify(err));
       throw new ConflictException();

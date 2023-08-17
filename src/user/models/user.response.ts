@@ -1,7 +1,7 @@
 import type { User } from '@prisma/client';
 
 export class UserResponse {
-  id: number;
+  id: string;
 
   username: string;
 
@@ -11,11 +11,13 @@ export class UserResponse {
 
   name: string;
 
-  image: string | null;
+  avatar: string | null;
 
   birthDate: Date | null; // ISO Date
 
-  registrationDate: Date; // ISO Date
+  createdAt: Date; // ISO Date
+
+  updatedAt: Date; // ISO Date
 
   static fromUserEntity(entity: User): UserResponse {
     const response = new UserResponse();
@@ -26,9 +28,10 @@ export class UserResponse {
     response.name = [entity.firstName, entity.middleName, entity.lastName]
       .filter((s) => s !== null)
       .join(' ');
-    response.image = entity.image;
+    response.avatar = entity.avatar;
     response.birthDate = entity.birthDate;
-    response.registrationDate = entity.registrationDate;
+    response.createdAt = entity.createdAt;
+    response.updatedAt = entity.updatedAt;
     return response;
   }
 }

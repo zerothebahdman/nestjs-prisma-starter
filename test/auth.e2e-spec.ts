@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
-import { SignupRequest } from '../src/auth/models';
+import { SignupRequest } from '../src/auth/dtos';
 
 describe('AuthController (e2e)', () => {
   let app;

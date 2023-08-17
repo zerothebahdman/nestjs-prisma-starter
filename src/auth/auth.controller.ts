@@ -9,7 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { Usr } from '../user/user.decorator';
@@ -24,15 +29,24 @@ import {
   LoginResponse,
   ResetPasswordRequest,
   SignupRequest,
-} from './models';
+} from './dtos';
 import { UserResponse } from '../user/models';
 import { AuthUser } from './auth-user';
+import { UserService } from '../user/user.service';
+import { HelperClass } from 'src/utils/helpers';
+import { MailSenderService } from 'src/mail-sender/mail-sender.service';
 
-@ApiTags('auth')
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+    private readonly helperClass: HelperClass,
+    private readonly emailService: MailSenderService,
+  ) {}
 
+  @ApiOperation({ summary: 'Check username validity' })
   @Post('check-username')
   @HttpCode(HttpStatus.OK)
   async checkUsernameAvailability(
@@ -54,11 +68,22 @@ export class AuthController {
     );
     return new CheckEmailResponse(isAvailable);
   }
-
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User created successfully',
+    type: UserResponse,
+  })
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
   async signup(@Body() signupRequest: SignupRequest): Promise<void> {
-    await this.authService.signup(signupRequest);
+    const token = this.helperClass.generateRandomString(6, 'num');
+    const hashToken = await this.helperClass.hashString(token);
+    await this.authService.signup(signupRequest, hashToken);
+    await this.emailService.sendVerifyEmailMail(
+      signupRequest.firstName,
+      signupRequest.email,
+      token,
+    );
   }
 
   @Post('login')
@@ -106,7 +131,13 @@ export class AuthController {
   @Post('forgot-password/:email')
   @HttpCode(HttpStatus.OK)
   async sendResetPassword(@Param('email') email: string): Promise<void> {
-    await this.authService.sendResetPasswordMail(email);
+    const user = await this.userService.queryUserDetails({
+      email: email.toLocaleLowerCase(),
+    });
+    const token = this.helperClass.generateRandomString(6, 'num');
+    const hashToken = await this.helperClass.hashString(token);
+    await this.authService.initiateResetPassword(user, hashToken);
+    await this.emailService.sendResetPasswordMail(user.name, user.email, token);
   }
 
   @Post('change-password')
@@ -134,12 +165,16 @@ export class AuthController {
 
   @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard())
-  async resendVerificationMail(@Usr() user: AuthUser): Promise<void> {
-    await this.authService.resendVerificationMail(
-      user.firstName,
-      user.email,
-      user.id,
-    );
+  // @UseGuards(AuthGuard())
+  async resendVerificationMail(@Body() body: CheckEmailRequest): Promise<void> {
+    const user = await this.userService.queryUserDetails({
+      email: body.email.toLocaleLowerCase(),
+    });
+    // if (user.accountStatus.status === ACCOUNT_STATUS.CONFIRMED)
+    //   throw new Error(`Oops!, account has already been verified`);
+    const token = this.helperClass.generateRandomString(6, 'num');
+    const hashToken = await this.helperClass.hashString(token);
+    await this.authService.resendVerificationMail(user.id, hashToken);
+    await this.emailService.sendVerifyEmailMail(user.name, user.email, token);
   }
 }

@@ -11,6 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
   const config = app.get(ConfigService);
   // Request Validation
+  app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   app.use(requestIp.mw());
@@ -26,7 +27,7 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api/swagger', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(config.get<number>('port') || 3000, '127.0.0.1', () => {
     Logger.log(

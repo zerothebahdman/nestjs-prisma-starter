@@ -4,7 +4,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Put,
   UnauthorizedException,
   UseGuards,
@@ -26,7 +25,7 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard())
   async updateUser(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateRequest: UpdateUserRequest,
     @Usr() user: AuthUser,
   ): Promise<void> {

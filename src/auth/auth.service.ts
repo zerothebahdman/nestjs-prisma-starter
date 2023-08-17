@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -18,9 +19,10 @@ import {
   LoginRequest,
   ResetPasswordRequest,
   SignupRequest,
-} from './models';
+} from './dtos';
 import { AuthUser } from './auth-user';
 import { PrismaService } from '../common/services/prisma.service';
+import { UserResponse } from 'src/user/models';
 
 @Injectable()
 export class AuthService {
@@ -31,54 +33,41 @@ export class AuthService {
     private readonly mailSenderService: MailSenderService,
   ) {}
 
-  async signup(signupRequest: SignupRequest): Promise<void> {
-    const emailVerificationToken = nanoid();
-
+  async signup(signupRequest: SignupRequest, token: string) {
     try {
-      await this.prisma.user.create({
+      const user = await this.prisma.user.create({
         data: {
           username: signupRequest.username.toLowerCase(),
           email: signupRequest.email.toLowerCase(),
-          passwordHash: await bcrypt.hash(signupRequest.password, 10),
+          password: await bcrypt.hash(signupRequest.password, 14),
           firstName: signupRequest.firstName,
           lastName: signupRequest.lastName,
           middleName: signupRequest.middleName,
           emailVerification: {
             create: {
-              token: emailVerificationToken,
+              token,
             },
           },
         },
         select: null,
       });
+      return user;
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === 'P2002') {
           // unique constraint
-          throw new ConflictException();
+          throw new BadRequestException('Username or email already exists');
         } else throw e;
       } else throw e;
     }
-
-    await this.mailSenderService.sendVerifyEmailMail(
-      signupRequest.firstName,
-      signupRequest.email,
-      emailVerificationToken,
-    );
   }
 
-  async resendVerificationMail(
-    name: string,
-    email: string,
-    userId: number,
-  ): Promise<void> {
+  async resendVerificationMail(userId: string, token: string): Promise<void> {
     // delete old email verification tokens if exist
     const deletePrevEmailVerificationIfExist =
       this.prisma.emailVerification.deleteMany({
         where: { userId },
       });
-
-    const token = nanoid();
 
     const createEmailVerification = this.prisma.emailVerification.create({
       data: {
@@ -92,8 +81,6 @@ export class AuthService {
       deletePrevEmailVerificationIfExist,
       createEmailVerification,
     ]);
-
-    await this.mailSenderService.sendVerifyEmailMail(name, email, token);
   }
 
   async verifyEmail(token: string): Promise<void> {
@@ -120,7 +107,7 @@ export class AuthService {
 
   async sendChangeEmailMail(
     changeEmailRequest: ChangeEmailRequest,
-    userId: number,
+    userId: string,
     name: string,
     oldEmail: string,
   ): Promise<void> {
@@ -176,27 +163,15 @@ export class AuthService {
     }
   }
 
-  async sendResetPasswordMail(email: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-      select: {
-        id: true,
-        firstName: true,
-        email: true,
-      },
-    });
-
-    if (user === null) {
-      throw new NotFoundException();
-    }
-
+  async initiateResetPassword(
+    user: UserResponse,
+    token: string,
+  ): Promise<void> {
     const deletePrevPasswordResetIfExist = this.prisma.passwordReset.deleteMany(
       {
         where: { userId: user.id },
       },
     );
-
-    const token = nanoid();
 
     const createPasswordReset = this.prisma.passwordReset.create({
       data: {
@@ -210,12 +185,6 @@ export class AuthService {
       deletePrevPasswordResetIfExist,
       createPasswordReset,
     ]);
-
-    await this.mailSenderService.sendResetPasswordMail(
-      user.firstName,
-      user.email,
-      token,
-    );
   }
 
   async resetPassword(
@@ -229,7 +198,7 @@ export class AuthService {
       await this.prisma.user.update({
         where: { id: passwordReset.userId },
         data: {
-          passwordHash: await bcrypt.hash(resetPasswordRequest.newPassword, 10),
+          password: await bcrypt.hash(resetPasswordRequest.newPassword, 10),
         },
         select: null,
       });
@@ -243,7 +212,7 @@ export class AuthService {
 
   async changePassword(
     changePasswordRequest: ChangePasswordRequest,
-    userId: number,
+    userId: string,
     name: string,
     email: string,
   ): Promise<void> {
@@ -252,7 +221,7 @@ export class AuthService {
         id: userId,
       },
       data: {
-        passwordHash: await bcrypt.hash(changePasswordRequest.newPassword, 10),
+        password: await bcrypt.hash(changePasswordRequest.newPassword, 10),
       },
       select: null,
     });
@@ -291,7 +260,7 @@ export class AuthService {
       },
       select: {
         id: true,
-        passwordHash: true,
+        password: true,
         email: true,
         username: true,
       },
@@ -299,7 +268,7 @@ export class AuthService {
 
     if (
       user === null ||
-      !bcrypt.compareSync(loginRequest.password, user.passwordHash)
+      !bcrypt.compareSync(loginRequest.password, user.password)
     ) {
       throw new UnauthorizedException();
     }
