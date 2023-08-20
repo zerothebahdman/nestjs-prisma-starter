@@ -18,7 +18,6 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { Usr } from '../user/user.decorator';
 import {
-  ChangePasswordRequest,
   CheckEmailRequest,
   CheckEmailResponse,
   CheckUsernameRequest,
@@ -109,17 +108,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async changeEmail(@Query('token') token: string): Promise<void> {
     await this.authService.changeEmail(token);
-  }
-
-  @Post('change-password')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard())
-  async changePassword(
-    @Body() changePasswordRequest: ChangePasswordRequest,
-    @Usr() user: AuthUser,
-  ): Promise<void> {
-    await this.authService.changePassword(changePasswordRequest, user.id);
-    this.emailService.sendPasswordChangeInfoMail(user.firstName, user.email);
   }
 
   @Post('forgot-password')

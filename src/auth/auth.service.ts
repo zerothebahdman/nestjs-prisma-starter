@@ -14,7 +14,6 @@ import { UserService } from '../user/user.service';
 import { JwtPayload } from './jwt-payload';
 import {
   ChangeEmailRequest,
-  ChangePasswordRequest,
   LoginRequest,
   ResetPasswordRequest,
   SignupRequest,
@@ -186,39 +185,18 @@ export class AuthService {
     ]);
   }
 
-  async resetPassword(
-    resetPasswordRequest: ResetPasswordRequest,
-  ): Promise<void> {
-    const passwordReset = await this.prisma.passwordReset.findUnique({
+  async resetPassword(resetPasswordRequest: ResetPasswordRequest) {
+    const passwordReset = await this.prisma.passwordReset.findFirstOrThrow({
       where: { token: resetPasswordRequest.token },
     });
-
-    if (passwordReset !== null && passwordReset.validUntil > new Date()) {
-      await this.prisma.user.update({
-        where: { id: passwordReset.userId },
-        data: {
-          password: await bcrypt.hash(resetPasswordRequest.newPassword, 10),
-        },
-        select: null,
-      });
-    } else {
-      Logger.log(
-        `Invalid reset password token ${resetPasswordRequest.token} is rejected`,
-      );
-      throw new NotFoundException();
-    }
-  }
-
-  async changePassword(
-    changePasswordRequest: ChangePasswordRequest,
-    userId: string,
-  ): Promise<void> {
-    await this.prisma.user.update({
-      where: {
-        id: userId,
-      },
+    if (passwordReset === null)
+      throw new NotFoundException('Oops!, invalid token');
+    if (passwordReset.validUntil < new Date())
+      throw new BadRequestException('Token expired');
+    return await this.prisma.user.update({
+      where: { id: passwordReset.userId },
       data: {
-        password: await bcrypt.hash(changePasswordRequest.newPassword, 10),
+        password: await bcrypt.hash(resetPasswordRequest.newPassword, 10),
       },
       select: null,
     });

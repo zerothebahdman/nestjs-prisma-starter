@@ -67,7 +67,6 @@ export class EmailService {
   }
 
   async sendResetPasswordMail(name: string, email: string, token: string) {
-    this.logger.log({ from: config().mail.from });
     const mailOptions = {
       from: config().mail.from,
       to: email, // list of receivers (separated by ,)
@@ -76,36 +75,5 @@ export class EmailService {
     };
     this.logger.log(`Sending email to ${email}`);
     return this.sendMail(mailOptions);
-  }
-
-  async sendPasswordChangeInfoMail(name: string, email: string) {
-    // const buttonLink = config.project.url;
-    // const mail = changePasswordInfo
-    //   .replace(new RegExp('--PersonName--', 'g'), name)
-    //   .replace(new RegExp('--ProjectName--', 'g'), config.project.name)
-    //   .replace(new RegExp('--ProjectAddress--', 'g'), config.project.address)
-    //   .replace(new RegExp('--ProjectLogo--', 'g'), config.project.logoUrl)
-    //   .replace(new RegExp('--ProjectSlogan--', 'g'), config.project.slogan)
-    //   .replace(new RegExp('--ProjectColor--', 'g'), config.project.color)
-    //   .replace(new RegExp('--ProjectLink--', 'g'), config.project.url)
-    //   .replace(new RegExp('--Socials--', 'g'), this.socials)
-    //   .replace(new RegExp('--ButtonLink--', 'g'), buttonLink);
-    // const mailOptions = {
-    //   from: `"${config.mail.senderCredentials.name}" <${config.mail.senderCredentials.email}>`,
-    //   to: email, // list of receivers (separated by ,)
-    //   subject: `Your ${config.project.name} Account's Password is Changed`,
-    //   html: mail,
-    // };
-    // return new Promise<boolean>((resolve) =>
-    //   this.transporter.sendMail(mailOptions, async (error) => {
-    //     if (error) {
-    //       this.logger.warn(
-    //         'Mail sending failed, check your service credentials.',
-    //       );
-    //       resolve(false);
-    //     }
-    //     resolve(true);
-    //   }),
-    // );
   }
 }
