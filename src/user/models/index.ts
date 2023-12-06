@@ -1,3 +1,4 @@
-export { UserResponse } from './user.response';
-
-export { UpdateUserRequest } from './request/update-user-request.model';
+export {
+  UpdateUserRequestSchema,
+  UpdateUserRequestDto,
+} from './request/update-user-request.model';

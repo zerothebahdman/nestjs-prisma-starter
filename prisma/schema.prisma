@@ -7,52 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model EmailChange {
-  token      String   @id @db.Char(250)
-  newEmail   String
-  userId     String   @unique @db.Uuid
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  validUntil DateTime @default(dbgenerated("(timezone('utc'::text, now()) + '1 day'::interval)")) @db.Timestamp(6)
+model Token {
+  token       String    @id @db.Char(250)
+  user_id     String    @unique @db.Uuid
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  valid_until DateTime  @default(dbgenerated("(timezone('utc'::text, now()) + '1 day'::interval)")) @db.Timestamp(6)
+  type        TokenType
 
-  @@map("email-change")
-}
-
-model EmailVerification {
-  token      String   @id @db.Char(250)
-  userId     String   @unique @db.Uuid
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  validUntil DateTime @default(dbgenerated("(timezone('utc'::text, now()) + '1 day'::interval)")) @db.Timestamp(6)
-
-  @@map("email-verification")
-}
-
-model PasswordReset {
-  token      String   @id @db.Char(250)
-  userId     String   @unique @db.Uuid
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  validUntil DateTime @default(dbgenerated("(timezone('utc'::text, now()) + '1 day'::interval)")) @db.Timestamp(6)
-
-  @@map("password-reset")
+  @@map("token")
 }
 
 model User {
-  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username          String             @unique
-  email             String             @unique
-  password          String
-  firstName         String
-  lastName          String
-  middleName        String?
-  avatar            String?
-  status            AccountStatus      @default(pending)
-  emailVerified     Boolean            @default(false)
-  birthDate         DateTime?          @db.Date
-  createdAt         DateTime           @default(dbgenerated("timezone('UTC'::text, now())")) @db.Timestamp(6)
-  updatedAt         DateTime           @default(dbgenerated("timezone('UTC'::text, now())")) @db.Timestamp(6)
-  deletedAt         DateTime?
-  emailChange       EmailChange?
-  emailVerification EmailVerification?
-  passwordReset     PasswordReset?
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username       String?       @unique
+  email          String        @unique
+  password       String
+  first_name     String
+  last_name      String
+  middle_name    String?
+  avatar         String?
+  status         AccountStatus @default(pending)
+  gender         Gender?
+  email_verified Boolean       @default(false)
+  birth_date     DateTime?     @db.Date
+  created_at     DateTime      @default(dbgenerated("timezone('UTC'::text, now())")) @db.Timestamp(6)
+  updated_at     DateTime      @default(dbgenerated("timezone('UTC'::text, now())")) @db.Timestamp(6)
+  deleted_at     DateTime?
+  Token          Token?
 
   @@map("user")
 }
@@ -61,4 +42,15 @@ enum AccountStatus {
   pending
   confirmed
   compromised
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum TokenType {
+  email_verification
+  phone
+  reset_password
 }

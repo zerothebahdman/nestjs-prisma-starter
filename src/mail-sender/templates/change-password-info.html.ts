@@ -1,4 +1,4 @@
-import config from 'config/api-gateway.config';
+import config from '../../../config/api-gateway.config';
 const PASSWORD_RESET = (name: string, code: string) => `
   <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <h1 style="text-align: left;">Welcome to ${config().app_name}!</h1>

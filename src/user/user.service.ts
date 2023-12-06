@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import { AuthUser } from '../auth/auth-user';
-import { UpdateUserRequest, UserResponse } from './models';
+import { UpdateUserRequestDto } from './models';
 
 @Injectable()
 export class UserService {
@@ -22,24 +22,21 @@ export class UserService {
     });
   }
 
-  async updateUser(
-    userId: string,
-    updateRequest: UpdateUserRequest,
-  ): Promise<UserResponse> {
+  async updateUser(userId: string, updateRequest: UpdateUserRequestDto) {
     try {
       const updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: {
           ...updateRequest,
-          birthDate:
-            updateRequest.birthDate !== null &&
-            updateRequest.birthDate !== undefined
-              ? new Date(updateRequest.birthDate)
-              : updateRequest.birthDate,
+          birth_date:
+            updateRequest.birth_date !== null &&
+            updateRequest.birth_date !== undefined
+              ? new Date(updateRequest.birth_date)
+              : updateRequest.birth_date,
         },
       });
 
-      return UserResponse.fromUserEntity(updatedUser);
+      return updatedUser;
     } catch (err) {
       Logger.error(JSON.stringify(err));
       throw new ConflictException();
@@ -47,15 +44,8 @@ export class UserService {
   }
 
   async queryUserDetails(filter: { [key: string]: string }) {
-    try {
-      const user = await this.prisma.user.findFirst({
-        where: filter,
-      });
-      if (!user) throw new ConflictException('User not found');
-      return UserResponse.fromUserEntity(user);
-    } catch (err) {
-      Logger.error(JSON.stringify(err));
-      throw new ConflictException();
-    }
+    return await this.prisma.user.findFirst({
+      where: filter,
+    });
   }
 }

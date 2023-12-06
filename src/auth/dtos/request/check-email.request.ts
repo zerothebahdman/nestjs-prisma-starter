@@ -1,7 +1,6 @@
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import * as Yup from 'yup';
+export const checkEmailSchema = Yup.object().shape({
+  email: Yup.string().email().required().trim(),
+});
 
-export class CheckEmailRequest {
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
-}
+export type CheckEmailRequestDto = Yup.InferType<typeof checkEmailSchema>;

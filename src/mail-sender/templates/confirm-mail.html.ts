@@ -1,4 +1,4 @@
-import config from 'config/api-gateway.config';
+import config from '../../../config/api-gateway.config';
 const EMAIL_VERIFICATION = (name: string, code: string) => `
   <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
     <h1 style="text-align: center;">Welcome to ${config().app_name}!</h1>

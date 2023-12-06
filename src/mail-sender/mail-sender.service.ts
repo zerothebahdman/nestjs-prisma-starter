@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { createTransport } from 'nodemailer';
 import * as Mail from 'nodemailer/lib/mailer';
 
-// import config from '../config';
-import config from 'config/api-gateway.config';
+// import apiGatewayConfig from '../apiGatewayConfig';
+import apiGatewayConfig from '../../config/api-gateway.config';
 import { EMAIL_VERIFICATION, PASSWORD_RESET } from './templates';
 
 @Injectable()
@@ -13,15 +13,15 @@ export class EmailService {
 
   constructor() {
     this.transporter = createTransport({
-      host: config().mail.host,
-      port: Number(config().mail.port),
+      host: apiGatewayConfig().mail.host,
+      port: Number(apiGatewayConfig().mail.port),
       connectionTimeout: 300000,
       pool: true,
       logger: true,
       secure: false,
       auth: {
-        user: config().mail.user,
-        pass: config().mail.password,
+        user: apiGatewayConfig().mail.user,
+        pass: apiGatewayConfig().mail.password,
       },
       ignoreTLS: false,
     });
@@ -46,7 +46,7 @@ export class EmailService {
 
   async sendVerifyEmailMail(name: string, email: string, token: string) {
     const mailOptions = {
-      from: config().mail.from,
+      from: apiGatewayConfig().mail.from,
       to: email, // list of receivers (separated by ,)
       subject: 'Email Verification Requested',
       html: EMAIL_VERIFICATION(name, token),
@@ -57,7 +57,7 @@ export class EmailService {
 
   async sendChangeEmailMail(name: string, email: string, token: string) {
     const mailOptions = {
-      from: config().mail.from,
+      from: apiGatewayConfig().mail.from,
       to: email, // list of receivers (separated by ,)
       subject: 'Email Change Requested',
       html: PASSWORD_RESET(name, token),
@@ -68,7 +68,7 @@ export class EmailService {
 
   async sendResetPasswordMail(name: string, email: string, token: string) {
     const mailOptions = {
-      from: config().mail.from,
+      from: apiGatewayConfig().mail.from,
       to: email, // list of receivers (separated by ,)
       subject: 'Password Reset Requested',
       html: PASSWORD_RESET(name, token),

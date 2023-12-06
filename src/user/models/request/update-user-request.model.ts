@@ -1,41 +1,16 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsUrl,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import * as Yup from 'yup';
 
-export class UpdateUserRequest {
-  @IsOptional()
-  @IsNotEmpty()
-  @Matches(RegExp('^[a-zA-Z0-9\\-]+$'))
-  @MaxLength(20)
-  username?: string;
+export const UpdateUserRequestSchema = Yup.object().shape({
+  email: Yup.string().email().required(),
+  first_name: Yup.string().required(),
+  last_name: Yup.string().required(),
+  password: Yup.string().required(),
+  confirmPassword: Yup.string()
+    .required()
+    .oneOf([Yup.ref('password')]),
+  birth_date: Yup.date().required(),
+});
 
-  @IsOptional()
-  @IsNotEmpty()
-  @Matches(RegExp('^[A-Za-zıöüçğşİÖÜÇĞŞñÑáéíóúÁÉÍÓÚ]+$'))
-  @MaxLength(20)
-  firstName?: string;
-
-  @IsOptional()
-  @IsNotEmpty()
-  @Matches(RegExp('^[A-Za-zıöüçğşİÖÜÇĞŞñÑáéíóúÁÉÍÓÚ ]+$'))
-  @MaxLength(40)
-  lastName?: string;
-
-  @IsOptional()
-  @IsNotEmpty()
-  @MaxLength(40)
-  @Matches(RegExp('^[A-Za-zıöüçğşİÖÜÇĞŞñÑáéíóúÁÉÍÓÚ ]+$'))
-  middleName?: string;
-
-  @IsOptional()
-  @IsUrl()
-  avatar?: string;
-
-  @IsOptional()
-  @Matches(RegExp('([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))'))
-  birthDate?: string | null; // ISO Date
-}
+export type UpdateUserRequestDto = Yup.InferType<
+  typeof UpdateUserRequestSchema
+>;

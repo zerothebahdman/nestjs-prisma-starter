@@ -31,7 +31,10 @@ RUN yarn install
 COPY . .
 
 COPY --from=development /usr/src/app/dist ./dist
+COPY --from=development /usr/src/app/prisma ./prisma
 
 EXPOSE 8080
 
-CMD [ "node", "dist/server.js" ]
+RUN npx prisma generate
+
+CMD [ "npm", "run", "start:migrate:prod" ]

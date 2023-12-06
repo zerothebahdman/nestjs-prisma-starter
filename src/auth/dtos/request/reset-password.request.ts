@@ -1,11 +1,12 @@
-import { IsNotEmpty, Length, MinLength } from 'class-validator';
+import * as Yup from 'yup';
+export const ResetPasswordRequestSchema = Yup.object().shape({
+  password: Yup.string().required(),
+  confirmPassword: Yup.string()
+    .required()
+    .oneOf([Yup.ref('password')]),
+  token: Yup.string().required(),
+});
 
-export class ResetPasswordRequest {
-  @IsNotEmpty()
-  @Length(21)
-  token: string;
-
-  @IsNotEmpty()
-  @MinLength(8)
-  newPassword: string;
-}
+export type ResetPasswordRequestDto = Yup.InferType<
+  typeof ResetPasswordRequestSchema
+>;

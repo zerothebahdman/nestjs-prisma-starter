@@ -6,27 +6,29 @@ import {
   Param,
   Put,
   UnauthorizedException,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from './user.service';
 import { Usr } from './user.decorator';
-import { UpdateUserRequest } from './models';
 import { AuthUser } from '../auth/auth-user';
+import { YupValidationPipe } from '../validator/yup.validation';
+import { UpdateUserRequestDto, UpdateUserRequestSchema } from './models';
+import { HttpExceptionFilter } from '../exception/http-exception-filter';
 
-@ApiTags('users')
+@UseFilters(new HttpExceptionFilter())
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiBearerAuth()
   @Put(':id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard())
   async updateUser(
     @Param('id') id: string,
-    @Body() updateRequest: UpdateUserRequest,
+    @Body(new YupValidationPipe(UpdateUserRequestSchema))
+    updateRequest: UpdateUserRequestDto,
     @Usr() user: AuthUser,
   ): Promise<void> {
     if (id !== user.id) {

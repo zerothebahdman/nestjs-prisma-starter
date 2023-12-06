@@ -29,7 +29,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(config.get<number>('port') || 3000, '127.0.0.1', () => {
+  await app.listen(config.get<number>('port') || 3000, '0.0.0.0', () => {
     Logger.log(
       `Server 🚀 is running on on port ${config.get<number>('port') || 3000}`,
     );
