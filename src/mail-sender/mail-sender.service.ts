@@ -1,10 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { createTransport } from 'nodemailer';
 import * as Mail from 'nodemailer/lib/mailer';
+
+import { EMAIL_VERIFICATION, PASSWORD_RESET } from './templates';
+import { Injectable, Logger } from '@nestjs/common';
 
 // import apiGatewayConfig from '../apiGatewayConfig';
 import apiGatewayConfig from '../../config/api-gateway.config';
-import { EMAIL_VERIFICATION, PASSWORD_RESET } from './templates';
+import { createTransport } from 'nodemailer';
 
 @Injectable()
 export class EmailService {
@@ -28,6 +29,10 @@ export class EmailService {
   }
 
   private async sendMail(mailOptions: Mail.Options) {
+    if (apiGatewayConfig().mail.disabled) {
+      this.logger.log('Email sending is disabled');
+      return;
+    }
     this.transporter.verify((error) => {
       if (error) this.logger.error(`Error sending email :::::: ${error}`);
       else this.logger.log('Server 🚀 is ready to send out mails');

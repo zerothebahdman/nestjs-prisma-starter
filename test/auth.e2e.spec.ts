@@ -11,7 +11,7 @@ import { createUser } from './utils/mock-user';
 import { faker } from '@faker-js/faker';
 import { sleep } from './utils/helper';
 
-describe('AuthController Integration', () => {
+describe('AuthController (e2e)', () => {
   let app: { init: () => any; close: () => any; getHttpServer: () => any };
   const prisma = new PrismaClient();
 
@@ -32,7 +32,9 @@ describe('AuthController Integration', () => {
 
   describe('/auth/signup POST', () => {
     it('should return 400 if email is not provided', async () => {
-      const signupRequest: SignupRequestDto = createUser();
+      const signupRequest: Partial<SignupRequestDto> = createUser({
+        email: '',
+      });
 
       const user = await request(app.getHttpServer())
         .post('/auth/signup')
@@ -64,7 +66,9 @@ describe('AuthController Integration', () => {
     });
 
     it('should return 400 if email is already in use', async () => {
-      const signupRequest: SignupRequestDto = createUser();
+      const signupRequest: Partial<SignupRequestDto> = createUser({
+        email: faker.internet.email(),
+      });
 
       const user = await request(app.getHttpServer())
         .post('/auth/signup')
@@ -120,7 +124,9 @@ describe('AuthController Integration', () => {
     });
 
     it('should return 400 if password is incorrect', async () => {
-      const signupRequest: SignupRequestDto = createUser();
+      const signupRequest: Partial<SignupRequestDto> = createUser({
+        email: faker.internet.email(),
+      });
 
       const user = await request(app.getHttpServer())
         .post('/auth/signup')
@@ -179,7 +185,9 @@ describe('AuthController Integration', () => {
     });
 
     it('should return 400 if token is expired', async () => {
-      const signupRequest: SignupRequestDto = createUser();
+      const signupRequest: Partial<SignupRequestDto> = createUser({
+        email: faker.internet.email(),
+      });
 
       const signup = await request(app.getHttpServer())
         .post('/auth/signup')
@@ -191,7 +199,7 @@ describe('AuthController Integration', () => {
       expect(signup.body.message).toBe('Signup Successful');
 
       const verifyRequest = {
-        token: faker.random.alphaNumeric(6),
+        token: faker.string.alphanumeric(6),
       };
 
       const user2 = await request(app.getHttpServer())
@@ -205,12 +213,13 @@ describe('AuthController Integration', () => {
     });
 
     it('should verify user email', async () => {
-      const signupRequest: SignupRequestDto = createUser();
+      const signupRequest: Partial<SignupRequestDto> = createUser({
+        email: faker.internet.email(),
+      });
 
       const signup = await request(app.getHttpServer())
         .post('/auth/signup')
         .send(signupRequest);
-      console.log(signup.body);
       expect(signup).toBeDefined();
       expect(signup.status).toBe(HttpStatus.CREATED);
       expect(signup.body).toBeDefined();
@@ -229,20 +238,19 @@ describe('AuthController Integration', () => {
   });
 
   describe('/auth/resend-verification POST', () => {
-    // it('should return 400 if email is not provided', async () => {
-    //   const resendRequest = {
-    //     email: '',
-    //   };
-    //   console.log(resendRequest);
-    //   const req = await request(app.getHttpServer())
-    //     .post('/auth/resend-verification')
-    //     .send(resendRequest);
-    //   await sleep(100);
-    //   expect(req).toBeDefined();
-    //   expect(req.status).toBe(HttpStatus.BAD_REQUEST);
-    //   expect(req.body).toBeDefined();
-    //   expect(req.body.message).toBe('email is a required field');
-    // });
+    it('should return 400 if email is not provided', async () => {
+      const resendRequest = {
+        email: '',
+      };
+      const req = await request(app.getHttpServer())
+        .post('/auth/resend-verification')
+        .send(resendRequest);
+      await sleep(100);
+      expect(req).toBeDefined();
+      expect(req.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(req.body).toBeDefined();
+      expect(req.body.message).toBe('email is a required field');
+    });
 
     it('should return 400 if email is invalid', async () => {
       const resendRequest = {
@@ -260,7 +268,9 @@ describe('AuthController Integration', () => {
     });
 
     it('should resend verification email', async () => {
-      const signupRequest: SignupRequestDto = createUser();
+      const signupRequest: Partial<SignupRequestDto> = createUser({
+        email: faker.internet.email(),
+      });
 
       const signup = await request(app.getHttpServer())
         .post('/auth/signup')

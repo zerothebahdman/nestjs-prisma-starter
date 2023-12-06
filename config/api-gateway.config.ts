@@ -48,6 +48,7 @@ export default () => {
       port: envVars.MAIL_PORT,
       user: envVars.MAIL_USER,
       password: envVars.MAIL_PASSWORD,
+      disabled: envVars.NODE_ENV === 'test',
     },
     redis_url: envVars.REDIS_URL,
     jwt_access_token_expires: envVars.JWT_ACCESS_TOKEN_EXPIRES,
